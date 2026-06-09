@@ -78,26 +78,19 @@ impl TryFrom<ServiceCreate> for db_service::ActiveModel {
     /// Tries to convert service creation parameters into a database active
     /// model.
     ///
-    /// The service `name` is stored inside the `extra` JSON blob (there is no
-    /// dedicated `name` column), mirroring how the database model is read back.
-    ///
     /// # Parameters
     /// - `value`: The service creation parameters.
     ///
     /// # Returns
     /// A `Result` containing the `ActiveModel`, or a `CatalogProviderError`.
     fn try_from(value: ServiceCreate) -> Result<Self, Self::Error> {
-        let mut extra = value.extra;
-        if let Some(name) = &value.name {
-            extra.insert("name".to_string(), Value::String(name.clone()));
-        }
         Ok(Self {
             id: Set(value
                 .id
                 .unwrap_or_else(|| Uuid::new_v4().simple().to_string())),
             r#type: Set(value.r#type),
             enabled: Set(value.enabled),
-            extra: Set(Some(serde_json::to_string(&extra)?)),
+            extra: Set(Some(serde_json::to_string(&value.extra)?)),
         })
     }
 }

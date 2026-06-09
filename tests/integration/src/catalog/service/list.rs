@@ -29,7 +29,6 @@ fn service(id: &str, r#type: &str) -> ServiceCreate {
         enabled: true,
         extra: HashMap::new(),
         id: Some(id.to_string()),
-        name: None,
         r#type: Some(r#type.to_string()),
     }
 }

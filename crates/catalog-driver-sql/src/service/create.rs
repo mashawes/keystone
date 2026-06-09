@@ -63,7 +63,6 @@ mod tests {
             enabled: true,
             extra: HashMap::new(),
             id: Some("svc-1".to_string()),
-            name: Some("nova".to_string()),
             r#type: Some("compute".to_string()),
         };
 

@@ -13,11 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # Update Service
 
-use std::collections::HashMap;
-
 use sea_orm::DatabaseConnection;
 use sea_orm::entity::*;
-use serde_json::Value;
 
 use openstack_keystone_core::catalog::CatalogProviderError;
 use openstack_keystone_core::error::DbContextExt;
@@ -27,9 +24,7 @@ use crate::entity::{prelude::Service as DbService, service as db_service};
 
 /// Updates an existing service.
 ///
-/// Only the fields set in `service` are changed; the rest are left as-is. The
-/// service `name` lives inside the `extra` JSON blob, so it is merged into the
-/// existing `extra` when provided.
+/// Only the fields set in `service` are changed; the rest are left as-is.
 ///
 /// # Parameters
 /// - `db`: The database connection.
@@ -50,7 +45,7 @@ pub async fn update<I: AsRef<str>>(
         .context("fetching service for update")?
         .ok_or_else(|| CatalogProviderError::ServiceNotFound(id.as_ref().to_string()))?;
 
-    let mut update_model: db_service::ActiveModel = existing.clone().into();
+    let mut update_model: db_service::ActiveModel = existing.into();
 
     if let Some(enabled) = service.enabled {
         update_model.enabled = Set(enabled);
@@ -58,20 +53,7 @@ pub async fn update<I: AsRef<str>>(
     if let Some(typ) = service.r#type {
         update_model.r#type = Set(Some(typ));
     }
-
-    // `name` is stored inside `extra`, so update `extra` if either the raw extra
-    // or the name was provided.
-    if service.extra.is_some() || service.name.is_some() {
-        let mut extra: HashMap<String, Value> = match &existing.extra {
-            Some(s) => serde_json::from_str(s).unwrap_or_default(),
-            None => HashMap::new(),
-        };
-        if let Some(new_extra) = service.extra {
-            extra = new_extra;
-        }
-        if let Some(name) = service.name {
-            extra.insert("name".to_string(), Value::String(name));
-        }
+    if let Some(extra) = service.extra {
         update_model.extra = Set(Some(serde_json::to_string(&extra)?));
     }
 

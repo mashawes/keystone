@@ -28,13 +28,18 @@ use crate::common::get_state;
 #[tokio::test]
 async fn test_create() -> Result<()> {
     let (state, _tmp) = get_state().await?;
+    // The service `name` is supplied as a key inside `extra`.
+    let mut extra = HashMap::new();
+    extra.insert(
+        "name".to_string(),
+        serde_json::Value::String("nova".to_string()),
+    );
     let service = create_service(
         &state,
         ServiceCreate {
             enabled: true,
-            extra: HashMap::new(),
+            extra,
             id: None,
-            name: Some("nova".to_string()),
             r#type: Some("compute".to_string()),
         },
     )
@@ -42,7 +47,7 @@ async fn test_create() -> Result<()> {
 
     // An ID is generated when none is provided.
     assert!(!service.id.is_empty());
-    // `name` round-trips out of the `extra` blob.
+    // `name` round-trips out of the `extra` blob onto the read model.
     assert_eq!(service.name.as_deref(), Some("nova"));
     assert_eq!(service.r#type.as_deref(), Some("compute"));
     assert!(service.enabled);
@@ -64,7 +69,6 @@ async fn test_create_id_too_long() -> Result<()> {
                 enabled: true,
                 extra: HashMap::new(),
                 id: Some(too_long),
-                name: None,
                 r#type: None,
             },
         )

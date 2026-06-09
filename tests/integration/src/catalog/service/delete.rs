@@ -36,7 +36,6 @@ async fn test_delete() -> Result<()> {
                 enabled: true,
                 extra: HashMap::new(),
                 id: Some("del-svc".to_string()),
-                name: None,
                 r#type: Some("compute".to_string()),
             },
         )

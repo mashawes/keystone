@@ -34,7 +34,6 @@ async fn test_update() -> Result<()> {
             enabled: true,
             extra: HashMap::new(),
             id: Some("upd-svc".to_string()),
-            name: Some("old-name".to_string()),
             r#type: Some("compute".to_string()),
         },
     )
@@ -48,14 +47,13 @@ async fn test_update() -> Result<()> {
             &service.id,
             ServiceUpdate {
                 enabled: Some(false),
-                extra: None,
-                name: Some("new-name".to_string()),
-                r#type: None,
+                r#type: Some("image".to_string()),
+                ..Default::default()
             },
         )
         .await?;
     assert!(!updated.enabled);
-    assert_eq!(updated.name.as_deref(), Some("new-name"));
+    assert_eq!(updated.r#type.as_deref(), Some("image"));
 
     // Confirm the change was persisted.
     let fetched = state
@@ -65,7 +63,7 @@ async fn test_update() -> Result<()> {
         .await?
         .unwrap();
     assert!(!fetched.enabled);
-    assert_eq!(fetched.name.as_deref(), Some("new-name"));
+    assert_eq!(fetched.r#type.as_deref(), Some("image"));
     Ok(())
 }
 
@@ -102,7 +100,6 @@ async fn test_update_type_too_long() -> Result<()> {
             enabled: true,
             extra: HashMap::new(),
             id: Some("upd-long".to_string()),
-            name: None,
             r#type: Some("compute".to_string()),
         },
     )

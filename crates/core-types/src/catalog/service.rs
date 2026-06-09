@@ -62,10 +62,6 @@ pub struct ServiceCreate {
     #[validate(length(min = 1, max = 64))]
     pub id: Option<String>,
 
-    /// The service name.
-    #[validate(length(max = 255))]
-    pub name: Option<String>,
-
     /// The service type.
     #[validate(length(max = 255))]
     pub r#type: Option<String>,
@@ -96,10 +92,6 @@ pub struct ServiceUpdate {
 
     /// New additional service properties (replaces the existing `extra`).
     pub extra: Option<HashMap<String, Value>>,
-
-    /// New service name.
-    #[validate(length(max = 255))]
-    pub name: Option<String>,
 
     /// New service type.
     #[validate(length(max = 255))]

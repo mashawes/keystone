@@ -28,13 +28,17 @@ use crate::common::get_state;
 #[tokio::test]
 async fn test_get() -> Result<()> {
     let (state, _tmp) = get_state().await?;
+    let mut extra = HashMap::new();
+    extra.insert(
+        "name".to_string(),
+        serde_json::Value::String("glance".to_string()),
+    );
     let service = create_service(
         &state,
         ServiceCreate {
             enabled: true,
-            extra: HashMap::new(),
+            extra,
             id: Some("service-get".to_string()),
-            name: Some("glance".to_string()),
             r#type: Some("image".to_string()),
         },
     )
