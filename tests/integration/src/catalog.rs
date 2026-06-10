@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+mod endpoint;
 mod region;
 mod service;
 
@@ -31,6 +32,7 @@ use openstack_keystone_core_types::catalog::*;
 use crate::common::*;
 use crate::impl_deleter;
 
+impl_deleter!(Service, Endpoint, get_catalog_provider, delete_endpoint);
 impl_deleter!(Service, Region, get_catalog_provider, delete_region);
 impl_deleter!(
     Service,
@@ -38,6 +40,21 @@ impl_deleter!(
     get_catalog_provider,
     delete_service
 );
+
+/// Create an endpoint through the catalog provider, returning a guard that
+/// deletes it again when dropped.
+pub async fn create_endpoint(
+    state: &ServiceState,
+    data: EndpointCreate,
+) -> Result<AsyncResourceGuard<Endpoint, ServiceState>> {
+    let res = state
+        .provider
+        .get_catalog_provider()
+        .create_endpoint(state, data)
+        .await
+        .unwrap();
+    Ok(AsyncResourceGuard::new(res, state.clone()))
+}
 
 /// Create a region through the catalog provider, returning a guard that deletes
 /// it again when dropped.

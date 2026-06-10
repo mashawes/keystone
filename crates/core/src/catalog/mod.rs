@@ -79,6 +79,27 @@ impl CatalogProvider {
 
 #[async_trait]
 impl CatalogApi for CatalogProvider {
+    /// Create a new endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `endpoint`: The endpoint creation parameters.
+    ///
+    /// # Returns
+    /// A `Result` containing the created `Endpoint`, or a `CatalogProviderError`.
+    #[tracing::instrument(level = "info", skip(self, state))]
+    async fn create_endpoint(
+        &self,
+        state: &ServiceState,
+        endpoint: EndpointCreate,
+    ) -> Result<Endpoint, CatalogProviderError> {
+        match self {
+            Self::Service(provider) => provider.create_endpoint(state, endpoint).await,
+            #[cfg(any(test, feature = "mock"))]
+            Self::Mock(provider) => provider.create_endpoint(state, endpoint).await,
+        }
+    }
+
     /// Create a new region.
     ///
     /// # Parameters
@@ -119,6 +140,27 @@ impl CatalogApi for CatalogProvider {
             Self::Service(provider) => provider.create_service(state, service).await,
             #[cfg(any(test, feature = "mock"))]
             Self::Mock(provider) => provider.create_service(state, service).await,
+        }
+    }
+
+    /// Delete an endpoint by ID.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `id`: The unique identifier of the endpoint.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or a `CatalogProviderError`.
+    #[tracing::instrument(level = "info", skip(self, state))]
+    async fn delete_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+    ) -> Result<(), CatalogProviderError> {
+        match self {
+            Self::Service(provider) => provider.delete_endpoint(state, id).await,
+            #[cfg(any(test, feature = "mock"))]
+            Self::Mock(provider) => provider.delete_endpoint(state, id).await,
         }
     }
 
@@ -315,6 +357,29 @@ impl CatalogApi for CatalogProvider {
             Self::Service(provider) => provider.list_services(state, params).await,
             #[cfg(any(test, feature = "mock"))]
             Self::Mock(provider) => provider.list_services(state, params).await,
+        }
+    }
+
+    /// Update an existing endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `id`: The unique identifier of the endpoint.
+    /// - `endpoint`: The fields to change.
+    ///
+    /// # Returns
+    /// A `Result` containing the updated `Endpoint`, or a `CatalogProviderError`.
+    #[tracing::instrument(level = "info", skip(self, state))]
+    async fn update_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+        endpoint: EndpointUpdate,
+    ) -> Result<Endpoint, CatalogProviderError> {
+        match self {
+            Self::Service(provider) => provider.update_endpoint(state, id, endpoint).await,
+            #[cfg(any(test, feature = "mock"))]
+            Self::Mock(provider) => provider.update_endpoint(state, id, endpoint).await,
         }
     }
 

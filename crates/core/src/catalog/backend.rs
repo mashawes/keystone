@@ -22,6 +22,20 @@ use crate::keystone::ServiceState;
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait CatalogBackend: Send + Sync {
+    /// Create a new endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `endpoint`: The endpoint creation parameters.
+    ///
+    /// # Returns
+    /// A `Result` containing the created `Endpoint`, or a `CatalogProviderError`.
+    async fn create_endpoint(
+        &self,
+        state: &ServiceState,
+        endpoint: EndpointCreate,
+    ) -> Result<Endpoint, CatalogProviderError>;
+
     /// Create a new region.
     ///
     /// # Parameters
@@ -50,6 +64,20 @@ pub trait CatalogBackend: Send + Sync {
         state: &ServiceState,
         service: ServiceCreate,
     ) -> Result<Service, CatalogProviderError>;
+
+    /// Delete an endpoint by ID.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `id`: The unique identifier of the endpoint.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or a `CatalogProviderError`.
+    async fn delete_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+    ) -> Result<(), CatalogProviderError>;
 
     /// Delete a region by ID.
     ///
@@ -183,6 +211,22 @@ pub trait CatalogBackend: Send + Sync {
         state: &ServiceState,
         params: &ServiceListParameters,
     ) -> Result<Vec<Service>, CatalogProviderError>;
+
+    /// Update an existing endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `id`: The unique identifier of the endpoint.
+    /// - `endpoint`: The fields to change.
+    ///
+    /// # Returns
+    /// A `Result` containing the updated `Endpoint`, or a `CatalogProviderError`.
+    async fn update_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+        endpoint: EndpointUpdate,
+    ) -> Result<Endpoint, CatalogProviderError>;
 
     /// Update an existing region.
     ///

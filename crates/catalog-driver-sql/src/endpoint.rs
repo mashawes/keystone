@@ -12,19 +12,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+use sea_orm::entity::*;
 use serde_json::Value;
 use tracing::error;
+use uuid::Uuid;
 
 use openstack_keystone_core::catalog::CatalogProviderError;
 use openstack_keystone_core_types::catalog::*;
 
 use crate::entity::endpoint as db_endpoint;
 
+mod create;
+mod delete;
 mod get;
 mod list;
+mod update;
 
+pub use create::create;
+pub use delete::delete;
 pub use get::get;
 pub use list::list;
+pub use update::update;
 
 impl TryFrom<db_endpoint::Model> for Endpoint {
     type Error = CatalogProviderError;
@@ -60,6 +68,33 @@ impl TryFrom<db_endpoint::Model> for Endpoint {
         }
 
         Ok(builder.build()?)
+    }
+}
+
+impl TryFrom<EndpointCreate> for db_endpoint::ActiveModel {
+    type Error = CatalogProviderError;
+
+    /// Tries to convert endpoint creation parameters into a database active
+    /// model.
+    ///
+    /// # Parameters
+    /// - `value`: The endpoint creation parameters.
+    ///
+    /// # Returns
+    /// A `Result` containing the `ActiveModel`, or a `CatalogProviderError`.
+    fn try_from(value: EndpointCreate) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: Set(value
+                .id
+                .unwrap_or_else(|| Uuid::new_v4().simple().to_string())),
+            legacy_endpoint_id: Set(None),
+            interface: Set(value.interface),
+            service_id: Set(value.service_id),
+            url: Set(value.url),
+            extra: Set(Some(serde_json::to_string(&value.extra)?)),
+            enabled: Set(value.enabled),
+            region_id: Set(value.region_id),
+        })
     }
 }
 

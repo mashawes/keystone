@@ -12,16 +12,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+use std::collections::HashMap;
+
 use derive_builder::Builder;
 use serde_json::Value;
+use validator::Validate;
 
 use crate::error::BuilderError;
 
-#[derive(Builder, Clone, Debug, Default, PartialEq)]
+#[derive(Builder, Clone, Debug, Default, PartialEq, Validate)]
 #[builder(build_fn(error = "BuilderError"))]
 #[builder(setter(strip_option, into))]
 pub struct Endpoint {
     /// The ID of the endpoint.
+    #[validate(length(min = 1, max = 64))]
     pub id: String,
     /// The interface type, which describes the visibility of the endpoint.
     /// Value is:
@@ -34,11 +38,14 @@ pub struct Endpoint {
     ///   - admin. Visible by administrative users on a secure network
     ///     interface.
     #[builder(default)]
+    #[validate(length(max = 8))]
     pub interface: String,
     /// The ID of the region that contains the service endpoint.
     #[builder(default)]
+    #[validate(length(max = 255))]
     pub region_id: Option<String>,
     /// The UUID of the service to which the endpoint belongs.
+    #[validate(length(max = 64))]
     pub service_id: String,
     /// The endpoint URL.
     pub url: String,
@@ -51,14 +58,74 @@ pub struct Endpoint {
     pub extra: Option<Value>,
 }
 
-#[derive(Builder, Clone, Debug, Default, PartialEq)]
+/// Parameters for creating a new endpoint.
+#[derive(Clone, Debug, Default, PartialEq, Validate)]
+pub struct EndpointCreate {
+    /// Whether the endpoint appears in the service catalog.
+    pub enabled: bool,
+
+    /// Additional endpoint properties.
+    pub extra: HashMap<String, Value>,
+
+    /// The ID of the endpoint. A UUID is generated when omitted.
+    #[validate(length(min = 1, max = 64))]
+    pub id: Option<String>,
+
+    /// The interface type (`public`, `internal`, or `admin`).
+    #[validate(length(max = 8))]
+    pub interface: String,
+
+    /// The ID of the region that contains the endpoint.
+    #[validate(length(max = 255))]
+    pub region_id: Option<String>,
+
+    /// The UUID of the service to which the endpoint belongs.
+    #[validate(length(max = 64))]
+    pub service_id: String,
+
+    /// The endpoint URL.
+    pub url: String,
+}
+
+#[derive(Builder, Clone, Debug, Default, PartialEq, Validate)]
 #[builder(build_fn(error = "BuilderError"))]
 #[builder(setter(strip_option, into))]
 pub struct EndpointListParameters {
     /// Filters the response by an interface.
+    #[validate(length(max = 8))]
     pub interface: Option<String>,
     /// Filters the response by a service ID.
+    #[validate(length(max = 64))]
     pub service_id: Option<String>,
     /// Filters the response by a region ID.
+    #[validate(length(max = 255))]
     pub region_id: Option<String>,
+}
+
+/// Fields that can be changed when updating an endpoint.
+///
+/// Each field is `None` when the caller did not provide it (leave unchanged) and
+/// `Some(..)` to set a new value.
+#[derive(Clone, Debug, Default, PartialEq, Validate)]
+pub struct EndpointUpdate {
+    /// New enabled flag.
+    pub enabled: Option<bool>,
+
+    /// New additional endpoint properties (replaces the existing `extra`).
+    pub extra: Option<HashMap<String, Value>>,
+
+    /// New interface type.
+    #[validate(length(max = 8))]
+    pub interface: Option<String>,
+
+    /// New region ID.
+    #[validate(length(max = 255))]
+    pub region_id: Option<String>,
+
+    /// New service ID.
+    #[validate(length(max = 64))]
+    pub service_id: Option<String>,
+
+    /// New endpoint URL.
+    pub url: Option<String>,
 }

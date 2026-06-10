@@ -31,6 +31,10 @@ pub enum CatalogProviderError {
         #[from]
         source: serde_json::Error,
     },
+    /// The endpoint has not been found.
+    #[error("endpoint {0} not found")]
+    EndpointNotFound(String),
+
     /// The service has not been found.
     #[error("service {0} not found")]
     ServiceNotFound(String),

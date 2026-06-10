@@ -26,6 +26,12 @@ mock! {
 
     #[async_trait]
     impl CatalogApi for CatalogProvider {
+        async fn create_endpoint(
+            &self,
+            state: &ServiceState,
+            endpoint: EndpointCreate,
+        ) -> Result<Endpoint, CatalogProviderError>;
+
         async fn create_region(
             &self,
             state: &ServiceState,
@@ -37,6 +43,12 @@ mock! {
             state: &ServiceState,
             service: ServiceCreate,
         ) -> Result<Service, CatalogProviderError>;
+
+        async fn delete_endpoint<'a>(
+            &self,
+            state: &ServiceState,
+            id: &'a str,
+        ) -> Result<(), CatalogProviderError>;
 
         async fn delete_region<'a>(
             &self,
@@ -91,6 +103,13 @@ mock! {
             state: &ServiceState,
             params: &ServiceListParameters
         ) -> Result<Vec<Service>, CatalogProviderError>;
+
+        async fn update_endpoint<'a>(
+            &self,
+            state: &ServiceState,
+            id: &'a str,
+            endpoint: EndpointUpdate,
+        ) -> Result<Endpoint, CatalogProviderError>;
 
         async fn update_region<'a>(
             &self,

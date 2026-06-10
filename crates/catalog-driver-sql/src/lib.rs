@@ -55,6 +55,23 @@ inventory::submit! {
 
 #[async_trait]
 impl CatalogBackend for SqlBackend {
+    /// Create a new endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The service state containing the database connection.
+    /// - `endpoint_data`: The endpoint creation parameters.
+    ///
+    /// # Returns
+    /// A `Result` containing the created `Endpoint`, or a `CatalogProviderError`.
+    #[tracing::instrument(level = "debug", skip(self, state))]
+    async fn create_endpoint(
+        &self,
+        state: &ServiceState,
+        endpoint_data: EndpointCreate,
+    ) -> Result<Endpoint, CatalogProviderError> {
+        Ok(endpoint::create(&state.db, endpoint_data).await?)
+    }
+
     /// Create a new region.
     ///
     /// # Parameters
@@ -88,6 +105,23 @@ impl CatalogBackend for SqlBackend {
         service_data: ServiceCreate,
     ) -> Result<Service, CatalogProviderError> {
         Ok(service::create(&state.db, service_data).await?)
+    }
+
+    /// Delete an endpoint by ID.
+    ///
+    /// # Parameters
+    /// - `state`: The service state containing the database connection.
+    /// - `id`: The ID of the endpoint to delete.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or a `CatalogProviderError`.
+    #[tracing::instrument(level = "debug", skip(self, state))]
+    async fn delete_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+    ) -> Result<(), CatalogProviderError> {
+        Ok(endpoint::delete(&state.db, id).await?)
     }
 
     /// Delete a region by ID.
@@ -248,6 +282,25 @@ impl CatalogBackend for SqlBackend {
         params: &ServiceListParameters,
     ) -> Result<Vec<Service>, CatalogProviderError> {
         Ok(service::list(&state.db, params).await?)
+    }
+
+    /// Update an existing endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The service state containing the database connection.
+    /// - `id`: The ID of the endpoint to update.
+    /// - `endpoint_data`: The fields to change.
+    ///
+    /// # Returns
+    /// A `Result` containing the updated `Endpoint`, or a `CatalogProviderError`.
+    #[tracing::instrument(level = "debug", skip(self, state))]
+    async fn update_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+        endpoint_data: EndpointUpdate,
+    ) -> Result<Endpoint, CatalogProviderError> {
+        Ok(endpoint::update(&state.db, id, endpoint_data).await?)
     }
 
     /// Update an existing region.

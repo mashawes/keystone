@@ -51,6 +51,35 @@ impl CatalogService {
 
 #[async_trait]
 impl CatalogApi for CatalogService {
+    /// Create a new endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `endpoint`: The endpoint creation parameters.
+    ///
+    /// # Returns
+    /// A `Result` containing the created `Endpoint`, or a `CatalogProviderError`.
+    async fn create_endpoint(
+        &self,
+        state: &ServiceState,
+        endpoint: EndpointCreate,
+    ) -> Result<Endpoint, CatalogProviderError> {
+        endpoint.validate()?;
+        let endpoint = self.backend_driver.create_endpoint(state, endpoint).await?;
+
+        state
+            .event_dispatcher
+            .emit(Event::new(
+                Operation::Create,
+                EventPayload::Endpoint {
+                    id: endpoint.id.clone(),
+                },
+            ))
+            .await;
+
+        Ok(endpoint)
+    }
+
     /// Create a new region.
     ///
     /// # Parameters
@@ -108,6 +137,32 @@ impl CatalogApi for CatalogService {
             .await;
 
         Ok(service)
+    }
+
+    /// Delete an endpoint by ID.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `id`: The unique identifier of the endpoint.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or a `CatalogProviderError`.
+    async fn delete_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+    ) -> Result<(), CatalogProviderError> {
+        self.backend_driver.delete_endpoint(state, id).await?;
+
+        state
+            .event_dispatcher
+            .emit(Event::new(
+                Operation::Delete,
+                EventPayload::Endpoint { id: id.to_string() },
+            ))
+            .await;
+
+        Ok(())
     }
 
     /// Delete a region by ID.
@@ -244,6 +299,7 @@ impl CatalogApi for CatalogService {
         state: &ServiceState,
         params: &EndpointListParameters,
     ) -> Result<Vec<Endpoint>, CatalogProviderError> {
+        params.validate()?;
         self.backend_driver.list_endpoints(state, params).await
     }
 
@@ -281,6 +337,36 @@ impl CatalogApi for CatalogService {
     ) -> Result<Vec<Service>, CatalogProviderError> {
         params.validate()?;
         self.backend_driver.list_services(state, params).await
+    }
+
+    /// Update an existing endpoint.
+    ///
+    /// # Parameters
+    /// - `state`: The current service state.
+    /// - `id`: The unique identifier of the endpoint.
+    /// - `endpoint`: The fields to change.
+    ///
+    /// # Returns
+    /// A `Result` containing the updated `Endpoint`, or a `CatalogProviderError`.
+    async fn update_endpoint<'a>(
+        &self,
+        state: &ServiceState,
+        id: &'a str,
+        endpoint: EndpointUpdate,
+    ) -> Result<Endpoint, CatalogProviderError> {
+        endpoint.validate()?;
+        let updated = self
+            .backend_driver
+            .update_endpoint(state, id, endpoint)
+            .await?;
+        state
+            .event_dispatcher
+            .emit(Event::new(
+                Operation::Update,
+                EventPayload::Endpoint { id: id.to_string() },
+            ))
+            .await;
+        Ok(updated)
     }
 
     /// Update an existing region.
