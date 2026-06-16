@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # Get access rule
 
-use sea_orm::DatabaseConnection;
+use sea_orm::ConnectionTrait;
 use sea_orm::entity::*;
 use sea_orm::query::*;
 
@@ -34,7 +34,7 @@ use crate::entity::{access_rule as db_access_rule, prelude::AccessRule as DbAcce
 /// A `Result` containing an `Option` with the `AccessRule` if found, or an
 /// `Error`.
 pub async fn get<U: AsRef<str>, I: AsRef<str>>(
-    db: &DatabaseConnection,
+    db: &impl ConnectionTrait,
     user_id: U,
     id: I,
 ) -> Result<Option<AccessRule>, ApplicationCredentialProviderError> {

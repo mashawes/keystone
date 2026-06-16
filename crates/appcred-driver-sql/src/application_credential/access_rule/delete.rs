@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # Delete access rule
 
-use sea_orm::DatabaseConnection;
+use sea_orm::ConnectionTrait;
 use sea_orm::entity::*;
 use sea_orm::query::*;
 
@@ -44,7 +44,7 @@ use crate::entity::{
 /// A `Result` containing `()` or an `Error` (`AccessRuleNotFound` if no such
 /// rule exists, `AccessRuleInUse` if it is still attached to a credential).
 pub async fn delete<U: AsRef<str>, I: AsRef<str>>(
-    db: &DatabaseConnection,
+    db: &impl ConnectionTrait,
     user_id: U,
     id: I,
 ) -> Result<(), ApplicationCredentialProviderError> {

@@ -85,9 +85,23 @@ impl ApplicationCredentialApi for ApplicationCredentialService {
         if rule.id.is_none() {
             rule.id = Some(Uuid::new_v4().simple().to_string());
         }
-        self.backend_driver
+        let access_rule = self
+            .backend_driver
             .create_access_rule(state, user_id, rule)
-            .await
+            .await?;
+
+        state
+            .event_dispatcher
+            .emit(Event::new(
+                Operation::Create,
+                EventPayload::AccessRule {
+                    id: access_rule.id.clone(),
+                    user_id: user_id.to_string(),
+                },
+            ))
+            .await;
+
+        Ok(access_rule)
     }
 
     /// Create a new application credential.
@@ -174,7 +188,20 @@ impl ApplicationCredentialApi for ApplicationCredentialService {
     ) -> Result<(), ApplicationCredentialProviderError> {
         self.backend_driver
             .delete_access_rule(state, user_id, id)
-            .await
+            .await?;
+
+        state
+            .event_dispatcher
+            .emit(Event::new(
+                Operation::Delete,
+                EventPayload::AccessRule {
+                    id: id.to_string(),
+                    user_id: user_id.to_string(),
+                },
+            ))
+            .await;
+
+        Ok(())
     }
 
     /// Get a user's access rule by its ID.

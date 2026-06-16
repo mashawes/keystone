@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # List access rules
 
-use sea_orm::DatabaseConnection;
+use sea_orm::ConnectionTrait;
 use sea_orm::entity::*;
 use sea_orm::query::*;
 
@@ -32,7 +32,7 @@ use crate::entity::{access_rule as db_access_rule, prelude::AccessRule as DbAcce
 /// # Returns
 /// A `Result` containing a `Vec` of `AccessRule` or an `Error`.
 pub async fn list<U: AsRef<str>>(
-    db: &DatabaseConnection,
+    db: &impl ConnectionTrait,
     user_id: U,
 ) -> Result<Vec<AccessRule>, ApplicationCredentialProviderError> {
     DbAccessRule::find()
