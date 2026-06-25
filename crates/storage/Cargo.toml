@@ -34,9 +34,11 @@ fjall = { version = "3.1" }
 futures.workspace = true
 http.workspace = true
 mockall.workspace = true
+nix = { workspace = true, features = ["process", "resource"] }
 openraft = { workspace = true, features = ["serde", "type-alias"] }
 openstack-keystone-config.workspace = true
 openstack-keystone-storage-api.workspace = true
+openstack-keystone-storage-crypto.workspace = true
 prost.workspace = true
 rand.workspace = true
 rmp.workspace = true
@@ -57,6 +59,7 @@ criterion = { workspace = true, features = ["async_tokio"] }
 rcgen.workspace = true
 reserve-port = "2.4.0"
 rustls.workspace = true
+temp-env.workspace = true
 tempfile.workspace = true
 tracing-subscriber.workspace = true
 tonic = { workspace = true, features = ["tls-aws-lc"] }

@@ -25,7 +25,7 @@ use openstack_keystone_config::{
     TlsConfigurationBuilder,
 };
 use openstack_keystone_distributed_storage::{
-    Metadata, Nonce, StorageApi, StoreDataEnvelope, TypeConfig,
+    Metadata, StorageApi, StoreDataEnvelope, TypeConfig,
     app::{Storage, get_app_server, init_storage},
     network::get_server_tls_config,
     protobuf as pb,
@@ -220,21 +220,19 @@ async fn test_remove(instances: &Vec<Arc<InstanceHolder>>) {
 
 fn bench_command_serde(c: &mut Criterion) {
     let delete_cmd = StoreCommand::Transaction(vec![
-        MutationInner::convert(Mutation::remove("foo", Some("bar"), None), Nonce::default())
-            .unwrap(),
+        MutationInner::convert(Mutation::remove("foo", Some("bar"), None)).unwrap(),
     ]);
     let delete_index_cmd = StoreCommand::Transaction(vec![
-        MutationInner::convert(Mutation::remove_index("foo"), Nonce::default()).unwrap(),
+        MutationInner::convert(Mutation::remove_index("foo")).unwrap(),
     ]);
     let set_cmd = StoreCommand::Transaction(vec![
         MutationInner::convert(
             Mutation::set("foo", "bar", Metadata::new(), Some("bar"), None).unwrap(),
-            Nonce::default(),
         )
         .unwrap(),
     ]);
     let set_index_cmd = StoreCommand::Transaction(vec![
-        MutationInner::convert(Mutation::set_index("foo"), Nonce::default()).unwrap(),
+        MutationInner::convert(Mutation::set_index("foo")).unwrap(),
     ]);
     let mut group = c.benchmark_group("Command_Serde");
     for (cmd, name) in [
@@ -260,45 +258,52 @@ fn bench_command_serde(c: &mut Criterion) {
     group.finish();
 }
 
-fn bench_storage_cluster(c: &mut Criterion) {
-    let provider = rustls::crypto::aws_lc_rs::default_provider();
-    rustls::crypto::CryptoProvider::install_default(provider).unwrap();
+fn bench_storage_cluster(_c: &mut Criterion) {
+    temp_env::with_var(
+        "KEYSTONE_DEV_KEK",
+        Some("4242424242424242424242424242424242424242424242424242424242424242"),
+        || {
+            let c = _c;
+            let provider = rustls::crypto::aws_lc_rs::default_provider();
+            rustls::crypto::CryptoProvider::install_default(provider).unwrap();
 
-    let rt = Runtime::new().unwrap();
+            let rt = Runtime::new().unwrap();
 
-    let instances = rt.block_on(build_cluster(1)).unwrap();
+            let instances = rt.block_on(build_cluster(1)).unwrap();
 
-    let mut group = c.benchmark_group("Raft_1Node_Latency");
+            let mut group = c.benchmark_group("Raft_1Node_Latency");
 
-    group.bench_with_input(
-        BenchmarkId::new("write", "1node"),
-        &instances,
-        |b, instances| {
-            b.to_async(&rt).iter(|| test_write(instances));
+            group.bench_with_input(
+                BenchmarkId::new("write", "1node"),
+                &instances,
+                |b, instances| {
+                    b.to_async(&rt).iter(|| test_write(instances));
+                },
+            );
+            group.bench_with_input(
+                BenchmarkId::new("read", "1node"),
+                &instances,
+                |b, instances| {
+                    b.to_async(&rt).iter(|| test_read(instances));
+                },
+            );
+            group.bench_with_input(
+                BenchmarkId::new("prefix", "1node"),
+                &instances,
+                |b, instances| {
+                    b.to_async(&rt).iter(|| test_prefix(instances));
+                },
+            );
+            group.bench_with_input(
+                BenchmarkId::new("remove", "1node"),
+                &instances,
+                |b, instances| {
+                    b.to_async(&rt).iter(|| test_remove(instances));
+                },
+            );
+            group.finish();
         },
     );
-    group.bench_with_input(
-        BenchmarkId::new("read", "1node"),
-        &instances,
-        |b, instances| {
-            b.to_async(&rt).iter(|| test_read(instances));
-        },
-    );
-    group.bench_with_input(
-        BenchmarkId::new("prefix", "1node"),
-        &instances,
-        |b, instances| {
-            b.to_async(&rt).iter(|| test_prefix(instances));
-        },
-    );
-    group.bench_with_input(
-        BenchmarkId::new("remove", "1node"),
-        &instances,
-        |b, instances| {
-            b.to_async(&rt).iter(|| test_remove(instances));
-        },
-    );
-    group.finish();
 }
 
 criterion_group!(benches, bench_storage_cluster, bench_command_serde);

@@ -2,7 +2,7 @@ experimental = ["setup-scripts"]
 
 [profile.default]
 # exclude raft-only tests
-default-filter = 'not test(/spiffe/) and not test(/mapping/)'
+default-filter = 'not test(/spiffe/) and not test(/mapping/) and not test(/test_cluster/)'
 # Global default settings
 #
 [scripts.setup.setup-pg]
@@ -52,6 +52,10 @@ default-filter = "all()"
 
 [[profile.raft.scripts]]
 filter = "binary(integration)"
+setup = "raft-env"
+
+[[profile.raft.scripts]]
+filter = "binary(test_cluster)"
 setup = "raft-env"
 
 # --- API tests ---
