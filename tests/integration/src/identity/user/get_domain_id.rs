@@ -15,32 +15,18 @@
 
 use eyre::Result;
 use tracing_test::traced_test;
-use uuid::Uuid;
 
 use openstack_keystone::identity::IdentityApi;
-use openstack_keystone_core_types::identity::UserCreateBuilder;
 
 use crate::common::get_state;
-use crate::create_domain;
+use crate::{create_domain, create_user};
 
 #[tokio::test]
 #[traced_test]
 async fn test_get_user_domain_id() -> Result<()> {
     let (state, _tmp) = get_state().await?;
     let domain = create_domain!(state)?;
-
-    let user = state
-        .provider
-        .get_identity_provider()
-        .create_user(
-            &state,
-            UserCreateBuilder::default()
-                .name(Uuid::new_v4().to_string())
-                .domain_id(domain.id.clone())
-                .enabled(true)
-                .build()?,
-        )
-        .await?;
+    let user = create_user!(state, domain.id.clone())?;
 
     let domain_id = state
         .provider

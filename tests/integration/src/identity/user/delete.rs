@@ -15,32 +15,18 @@
 
 use eyre::Result;
 use tracing_test::traced_test;
-use uuid::Uuid;
 
 use openstack_keystone::identity::IdentityApi;
-use openstack_keystone_core_types::identity::UserCreateBuilder;
 
 use crate::common::get_state;
-use crate::create_domain;
+use crate::{create_domain, create_user};
 
 #[tokio::test]
 #[traced_test]
 async fn test_delete() -> Result<()> {
     let (state, _tmp) = get_state().await?;
     let domain = create_domain!(state)?;
-
-    let user = state
-        .provider
-        .get_identity_provider()
-        .create_user(
-            &state,
-            UserCreateBuilder::default()
-                .name(Uuid::new_v4().to_string())
-                .domain_id(domain.id.clone())
-                .enabled(true)
-                .build()?,
-        )
-        .await?;
+    let user = create_user!(state, domain.id.clone())?;
 
     state
         .provider
@@ -54,5 +40,18 @@ async fn test_delete() -> Result<()> {
         .get_user(&state, &user.id)
         .await?;
     assert!(fetched.is_none(), "user is gone after delete");
+    Ok(())
+}
+
+#[tokio::test]
+#[traced_test]
+async fn test_delete_not_found() -> Result<()> {
+    let (state, _tmp) = get_state().await?;
+    let result = state
+        .provider
+        .get_identity_provider()
+        .delete_user(&state, "does-not-exist")
+        .await;
+    assert!(result.is_err(), "deleting a missing user errors");
     Ok(())
 }

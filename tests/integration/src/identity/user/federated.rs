@@ -30,26 +30,25 @@ async fn test_find_federated_user() -> Result<()> {
     let domain = create_domain!(state)?;
     let unique_id = Uuid::new_v4().to_string();
 
-    let created = state
-        .provider
-        .get_identity_provider()
-        .create_user(
-            &state,
-            UserCreateBuilder::default()
-                .name(Uuid::new_v4().to_string())
-                .domain_id(domain.id.clone())
-                .enabled(true)
-                .federated(vec![Federation {
-                    idp_id: "idp_id".into(),
+    // Use the helper so the federated user is cleaned up automatically; the
+    // macro can't set the `federated` field we need here.
+    let created = crate::identity::create_user(
+        &state,
+        UserCreateBuilder::default()
+            .name(Uuid::new_v4().to_string())
+            .domain_id(domain.id.clone())
+            .enabled(true)
+            .federated(vec![Federation {
+                idp_id: "idp_id".into(),
+                unique_id: unique_id.clone(),
+                protocols: vec![FederationProtocol {
+                    protocol_id: "mapped".into(),
                     unique_id: unique_id.clone(),
-                    protocols: vec![FederationProtocol {
-                        protocol_id: "mapped".into(),
-                        unique_id: unique_id.clone(),
-                    }],
-                }])
-                .build()?,
-        )
-        .await?;
+                }],
+            }])
+            .build()?,
+    )
+    .await?;
 
     let found = state
         .provider

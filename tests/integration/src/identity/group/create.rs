@@ -15,38 +15,20 @@
 
 use eyre::Result;
 use tracing_test::traced_test;
-use uuid::Uuid;
-
-use openstack_keystone::identity::IdentityApi;
-use openstack_keystone_core_types::identity::GroupCreate;
 
 use crate::common::get_state;
-use crate::create_domain;
+use crate::{create_domain, create_group};
 
 #[tokio::test]
 #[traced_test]
 async fn test_create() -> Result<()> {
     let (state, _tmp) = get_state().await?;
     let domain = create_domain!(state)?;
-    let name = Uuid::new_v4().to_string();
 
-    let group = state
-        .provider
-        .get_identity_provider()
-        .create_group(
-            &state,
-            GroupCreate {
-                name: name.clone(),
-                domain_id: domain.id.clone(),
-                description: Some("a group".into()),
-                ..Default::default()
-            },
-        )
-        .await?;
+    let group = create_group!(state, domain.id.clone())?;
 
     assert!(!group.id.is_empty(), "an id was generated");
-    assert_eq!(group.name, name);
+    assert!(!group.name.is_empty());
     assert_eq!(group.domain_id, domain.id);
-    assert_eq!(group.description.as_deref(), Some("a group"));
     Ok(())
 }

@@ -15,31 +15,18 @@
 
 use eyre::Result;
 use tracing_test::traced_test;
-use uuid::Uuid;
 
 use openstack_keystone::identity::IdentityApi;
-use openstack_keystone_core_types::identity::GroupCreate;
 
 use crate::common::get_state;
-use crate::create_domain;
+use crate::{create_domain, create_group};
 
 #[tokio::test]
 #[traced_test]
 async fn test_delete() -> Result<()> {
     let (state, _tmp) = get_state().await?;
     let domain = create_domain!(state)?;
-    let group = state
-        .provider
-        .get_identity_provider()
-        .create_group(
-            &state,
-            GroupCreate {
-                name: Uuid::new_v4().to_string(),
-                domain_id: domain.id.clone(),
-                ..Default::default()
-            },
-        )
-        .await?;
+    let group = create_group!(state, domain.id.clone())?;
 
     state
         .provider
@@ -53,5 +40,18 @@ async fn test_delete() -> Result<()> {
         .get_group(&state, &group.id)
         .await?;
     assert!(fetched.is_none(), "group is gone after delete");
+    Ok(())
+}
+
+#[tokio::test]
+#[traced_test]
+async fn test_delete_not_found() -> Result<()> {
+    let (state, _tmp) = get_state().await?;
+    let result = state
+        .provider
+        .get_identity_provider()
+        .delete_group(&state, "does-not-exist")
+        .await;
+    assert!(result.is_err(), "deleting a missing group errors");
     Ok(())
 }
